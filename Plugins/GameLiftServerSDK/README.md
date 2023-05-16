@@ -6,6 +6,7 @@ You can find the official GameLift documentation [here](https://aws.amazon.com/d
 Before we can use the plugin inside an Unreal game, we need to compile GameLift server c++ SDK.
 To build GameLift server sdk, all you must do is the following:  
 Linux -
+
 ```sh
 mkdir out
 cd out
@@ -14,6 +15,7 @@ make
 ```
 
 Windows -
+
 ```sh
 mkdir out
 cd out
@@ -48,6 +50,7 @@ For more detailed instructions on how to build the c++ SDK, please refer to the 
 There are quite a lot of wasy to import an Unreal plugin. The method shown below doesn't require use of the Unreal Editor.
 
 First, we'll want to add GameLiftServerSDK plugin to the game's .uproject file.
+
 ```sh
 "Plugins": [
 	{
@@ -58,6 +61,7 @@ First, we'll want to add GameLiftServerSDK plugin to the game's .uproject file.
 ```
 Next, we'll want to make sure the game's ModuleRules take a dependency on the plugin.
 For example:
+
 ```csharp
 using UnrealBuildTool;
 
@@ -105,48 +109,66 @@ AGameLiftFPSGameMode::AGameLiftFPSGameMode()
 
 //Let's run this code only if GAMELIFT is enabled. Only with Server targets!
 #if WITH_GAMELIFT
-
-	//Getting the module first.
-	FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-
-	//InitSDK will establish a local connection with GameLift's agent to enable further communication.
-	gameLiftSdkModule->InitSDK();
-
-	//When a game session is created, GameLift sends an activation request to the game server and passes along the game session object containing game properties and other settings.
-	//Here is where a game server should take action based on the game session object.
-	//Once the game server is ready to receive incoming player connections, it should invoke GameLiftServerAPI.ActivateGameSession()
-	auto onGameSession = [=](Aws::GameLift::Server::Model::GameSession gameSession)
-	{
-		gameLiftSdkModule->ActivateGameSession();
-	};
 	
-	FProcessParameters* params = new FProcessParameters();
-	params->OnStartGameSession.BindLambda(onGameSession);
-
-	//OnProcessTerminate callback. GameLift will invoke this callback before shutting down an instance hosting this game server.
-	//It gives this game server a chance to save its state, communicate with services, etc., before being shut down.
-	//In this case, we simply tell GameLift we are indeed going to shutdown.
-	params->OnTerminate.BindLambda([=](){gameLiftSdkModule->ProcessEnding();});
-
-	//This is the HealthCheck callback.
-	//GameLift will invoke this callback every 60 seconds or so.
-	//Here, a game server might want to check the health of dependencies and such.
-	//Simply return true if healthy, false otherwise.
-	//The game server has 60 seconds to respond with its health status. GameLift will default to 'false' if the game server doesn't respond in time.
-	//In this case, we're always healthy!
-	params->OnHealthCheck.BindLambda([](){return true; });
-
-	//This game server tells GameLift that it will listen on port 7777 for incoming player connections.
-	params->port = 7777;
-
-	//Here, the game server tells GameLift what set of files to upload when the game session ends.
-	//GameLift will upload everything specified here for the developers to fetch later.
-	TArray<FString> logfiles;
-	logfiles.Add(TEXT("aLogFile.txt"));
-	params->logParameters = logfiles;
-
-	//Calling ProcessReady tells GameLift this game server is ready to receive incoming game sessions!
-	gameLiftSdkModule->ProcessReady(*params);
+    //Getting the module first.
+    FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
+ 
+    //Define the server parameters
+    FServerParameters serverParameters;
+ 
+    //AuthToken returned from the "aws gamelift get-compute-auth-token" API. Note this will expire and require a new call to the API after 15 minutes.
+    FParse::Value(FCommandLine::Get(), TEXT("-authtoken="), serverParameters.m_authToken);
+ 
+    //The Host/Compute ID of the GameLift Anywhere instance.
+    FParse::Value(FCommandLine::Get(), TEXT("-hostid="), serverParameters.m_hostId);
+ 
+    //The EC2 or Anywhere Fleet ID.
+    FParse::Value(FCommandLine::Get(), TEXT("-fleetid="), serverParameters.m_fleetId);
+ 
+    //The WebSocket URL (GameLiftServiceSdkEndpoint).
+    FParse::Value(FCommandLine::Get(), TEXT("-websocketurl="), serverParameters.m_webSocketUrl);
+ 
+    //The PID of the running process
+    serverParameters.m_processId = FString::Printf(TEXT("%d"), GetCurrentProcessId());
+ 
+    //InitSDK will establish a local connection with GameLift's agent to enable further communication.
+    gameLiftSdkModule->InitSDK(serverParameters);
+ 
+    //When a game session is created, GameLift sends an activation request to the game server and passes along the game session object containing game properties and other settings.
+    //Here is where a game server should take action based on the game session object.
+    //Once the game server is ready to receive incoming player connections, it should invoke GameLiftServerAPI.ActivateGameSession()
+    auto onGameSession = [=](Aws::GameLift::Server::Model::GameSession gameSession)
+    {
+        gameLiftSdkModule->ActivateGameSession();
+    };
+ 
+    FProcessParameters params;
+    params.OnStartGameSession.BindLambda(onGameSession);
+ 
+    //OnProcessTerminate callback. GameLift will invoke this callback before shutting down an instance hosting this game server.
+    //It gives this game server a chance to save its state, communicate with services, etc., before being shut down.
+    //In this case, we simply tell GameLift we are indeed going to shutdown.
+    params.OnTerminate.BindLambda([=]() { gameLiftSdkModule->ProcessEnding(); });
+ 
+    //This is the HealthCheck callback.
+    //GameLift will invoke this callback every 60 seconds or so.
+    //Here, a game server might want to check the health of dependencies and such.
+    //Simply return true if healthy, false otherwise.
+    //The game server has 60 seconds to respond with its health status. GameLift will default to 'false' if the game server doesn't respond in time.
+    //In this case, we're always healthy!
+    params.OnHealthCheck.BindLambda([]() { return true; });
+ 
+    //This game server tells GameLift that it will listen on port 7777 for incoming player connections.
+    params.port = 7777;
+ 
+    //Here, the game server tells GameLift what set of files to upload when the game session ends.
+    //GameLift will upload everything specified here for the developers to fetch later.
+    TArray<FString> logfiles;
+    logfiles.Add(TEXT("aLogFile.txt"));
+    params.logParameters = logfiles;
+ 
+    //Calling ProcessReady tells GameLift this game server is ready to receive incoming game sessions!
+    gameLiftSdkModule->ProcessReady(params);
 #endif
 }
 ```
@@ -165,11 +187,14 @@ UE4PrereqSetup_x64.exe /q
 ````
 
 ### Compatability Notes
-Supported UE4 Versions
-------
-4.22
-4.23
-4.24
-4.25
-4.26
+Supported UE4 and UE5 Versions
 
+------
+4.22  
+4.23  
+4.24  
+4.25  
+4.26  
+4.27 
+5.1.0
+5.1.1 

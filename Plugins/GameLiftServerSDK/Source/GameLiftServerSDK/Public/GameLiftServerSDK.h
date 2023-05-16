@@ -126,14 +126,13 @@ public:
     virtual FGameLiftStringOutcome GetSdkVersion();
 
     // Needs the standalone server to be running locally. If not, this will block at load time.
-    virtual FGameLiftGenericOutcome InitSDK();
+    virtual FGameLiftGenericOutcome InitSDK(const FServerParameters &serverParameters);
 
     //virtual TGameLiftGenericOutcome ProcessReady(Aws::GameLift::Server::ProcessParameters &processParameters);
     virtual FGameLiftGenericOutcome ProcessReady(FProcessParameters &processParameters);
 
     virtual FGameLiftGenericOutcome ProcessEnding();
     virtual FGameLiftGenericOutcome ActivateGameSession();
-    AWS_GAMELIFT_DEPRECATED virtual FGameLiftGenericOutcome TerminateGameSession();
     virtual FGameLiftGenericOutcome AcceptPlayerSession(const FString& playerSessionId);
     virtual FGameLiftGenericOutcome RemovePlayerSession(const FString& playerSessionId);
     virtual FGameLiftDescribePlayerSessionsOutcome DescribePlayerSessions(const FGameLiftDescribePlayerSessionsRequest& describePlayerSessionsRequest);
@@ -145,7 +144,8 @@ public:
     virtual FGameLiftStringOutcome StartMatchBackfill(const FStartMatchBackfillRequest& request);
     virtual FGameLiftGenericOutcome StopMatchBackfill(const FStopMatchBackfillRequest& request);
 
-    virtual FGameLiftGetInstanceCertificateOutcome GetInstanceCertificate();
+    virtual FGameLiftGetComputeCertificateOutcome GetComputeCertificate();
+    virtual FGameLiftGetFleetRoleCredentialsOutcome GetFleetRoleCredentials(const FGameLiftGetFleetRoleCredentialsRequest& request);
 
 private:
     /** Handle to the dll we will load */

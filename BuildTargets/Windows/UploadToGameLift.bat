@@ -7,20 +7,20 @@ if not exist WindowsServer\install.bat (
     timeout 10
     exit /b -1
 )
-copy /y Prerequisites\VC_Redist_2022_x64.exe.bak WindowsServer\VC_Redist_2022_x64.exe
+copy /y Prerequisites\VC_Redist_2022_x64.exe WindowsServer\VC_Redist_2022_x64.exe
 if not exist WindowsServer\VC_Redist_2022_x64.exe (
     echo "VC_Redist_2022_x64.exe does not exist in WindowsServer folder."
     timeout 10
     exit /b -1
 )
 :: GameLift Server SDK 5.0.0 need libcrypto and libssl. You don't need there files if you are using 4.x SDK.
-copy /y Prerequisites\libcrypto-3-x64.dll.bak WindowsServer\DayOne\Binaries\Win64\libcrypto-3-x64.dll
+copy /y Prerequisites\libcrypto-3-x64.dll WindowsServer\DayOne\Binaries\Win64\libcrypto-3-x64.dll
 if not exist WindowsServer\DayOne\Binaries\Win64\libcrypto-3-x64.dll (
     echo "libcrypto-3-x64.dll does not exist in WindowsServer\DayOne\Binaries\Win64 folder."
     timeout 10
     exit /b -1
 )
-copy /y Prerequisites\libssl-3-x64.dll.bak WindowsServer\DayOne\Binaries\Win64\libssl-3-x64.dll
+copy /y Prerequisites\libssl-3-x64.dll WindowsServer\DayOne\Binaries\Win64\libssl-3-x64.dll
 if not exist WindowsServer\DayOne\Binaries\Win64\libssl-3-x64.dll (
     echo "libssl-3-x64.dll does not exist in WindowsServer\DayOne\Binaries\Win64 folder."
     timeout 10
@@ -43,7 +43,7 @@ ECHO Current build version is %CURR_BUILD_VERSION%, raise the build version to %
 echo.
 
 echo Please wait while DayOneServer is being uploaded to GameLift...
-aws gamelift upload-build --name DayOne --build-version %NEW_BUILD_VERSION% --build-root "WindowsServer" --operating-system WINDOWS_2012
+aws gamelift upload-build --name DayOne --build-version %NEW_BUILD_VERSION% --build-root "WindowsServer" --operating-system WINDOWS_2016 --server-sdk-version 5.0.0
 echo.
 
 echo Fetch DayOne's latest Build Id in GameLift...
@@ -57,7 +57,7 @@ echo.
 timeout /T 5 /NOBREAK > nul
 
 echo Create fleet based on new Build Id...
-aws gamelift create-fleet --name DayOne-%NEW_BUILD_VERSION% --build-id %BUILD_ID% --ec2-instance-type "c6i.8xlarge" --fleet-type SPOT --ec2-inbound-permissions "FromPort=7777,ToPort=7777,IpRange=0.0.0.0/0,Protocol=UDP" "FromPort=3389,ToPort=3389,IpRange=0.0.0.0/0,Protocol=TCP" --runtime-configuration "ServerProcesses=[{LaunchPath=C:\game\DayOne\Binaries\Win64\DayOneServer.exe,Parameters=-log=..\..\Binaries\Win64\DayOneGameLift.log -port=7777,ConcurrentExecutions=2}]"
+aws gamelift create-fleet --name DayOne-%NEW_BUILD_VERSION% --build-id %BUILD_ID% --ec2-instance-type "c5.4xlarge" --fleet-type ON_DEMAND --ec2-inbound-permissions "FromPort=1123,ToPort=1123,IpRange=0.0.0.0/0,Protocol=UDP" "FromPort=3389,ToPort=3389,IpRange=0.0.0.0/0,Protocol=TCP" --runtime-configuration "ServerProcesses=[{LaunchPath=C:\Game\DayOne\Binaries\Win64\DayOneServer.exe,Parameters=-log=..\..\Binaries\Win64\DayOneGameLift.log -port=1123,ConcurrentExecutions=4}]"
 echo.
 
 pause

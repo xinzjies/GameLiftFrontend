@@ -74,9 +74,15 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 
 # Specific to project DayOne
-BuildTargets/Windows/*
-!BuildTargets/Windows/Prerequisites/
+# Client Build
+BuildTargets/Windows/Windows
+# Dedicated Server Build
+BuildTargets/Windows/WindowsServer
+!BuildTargets/Windows/Prerequisites/*.*
 !BuildTargets/Windows/*.bat
+
+# Include aws-cpp-sdk-gamelift-server.dll and aws-cpp-sdk-gamelift-server.lib
+!Plugins/GameLiftServerSDK/ThirdParty/GameLiftServerSDK/Win64/*.*
 
 Content/Developers/*
 Content/*/Developers/*

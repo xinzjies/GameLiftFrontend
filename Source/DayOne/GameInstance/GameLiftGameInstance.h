@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "GameLiftServerSDK.h"
 #include "GameLiftGameInstance.generated.h"
 
 DECLARE_DELEGATE_OneParam(FOnStartGameSessionDelegate, const struct FStartGameSessionState& /*StartGameSessionState*/);
@@ -63,4 +64,13 @@ public:
 	
 	FStartGameSessionState StartGameSessionState;
 	FProcessTerminateState ProcessTerminateState;
+
+private:
+	// GameLift Server SDK callback functions
+	void OnStartGameSession(Aws::GameLift::Server::Model::GameSession GameSession);
+	void OnProcessTerminate();
+
+	// Hold GameLift Server SDK process parameters
+	// Because GL SDK never keep this, it just reference this
+	FProcessParameters GLProcessParameters;
 };

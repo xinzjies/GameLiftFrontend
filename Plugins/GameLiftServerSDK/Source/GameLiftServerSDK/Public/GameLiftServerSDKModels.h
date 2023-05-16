@@ -30,6 +30,7 @@ inline GAMELIFTSERVERSDK_API EPlayerSessionCreationPolicy GetPlayerSessionCreati
     }
     return EPlayerSessionCreationPolicy::NOT_SET;
 }
+
 inline GAMELIFTSERVERSDK_API FString GetNameForPlayerSessionCreationPolicy(EPlayerSessionCreationPolicy value)
 {
     switch (value) {
@@ -67,6 +68,7 @@ inline GAMELIFTSERVERSDK_API EPlayerSessionStatus GetPlayerSessionStatusForName(
     }
     return EPlayerSessionStatus::NOT_SET;
 }
+
 inline GAMELIFTSERVERSDK_API FString GetNameForPlayerSessionStatus(EPlayerSessionStatus value)
 {
     switch (value) {
@@ -83,6 +85,14 @@ inline GAMELIFTSERVERSDK_API FString GetNameForPlayerSessionStatus(EPlayerSessio
     }
 }
 
+struct GAMELIFTSERVERSDK_API FServerParameters 
+{
+    FString m_webSocketUrl;
+    FString m_fleetId;
+    FString m_processId;
+    FString m_hostId;
+    FString m_authToken;
+};
 
 struct GAMELIFTSERVERSDK_API FGameLiftPlayerSession
 {	
@@ -115,13 +125,26 @@ struct GAMELIFTSERVERSDK_API FGameLiftDescribePlayerSessionsRequest
     FString m_nextToken;
 };
 
-struct GAMELIFTSERVERSDK_API FGameLiftGetInstanceCertificateResult
+struct GAMELIFTSERVERSDK_API FGameLiftGetComputeCertificateResult
 {
     FString m_certificate_path;
-    FString m_certificate_chain_path;
-    FString m_private_key_path;
-    FString m_hostname;
-    FString m_root_certificate_path;
+    FString m_computeName;
+};
+
+struct GAMELIFTSERVERSDK_API FGameLiftGetFleetRoleCredentialsResult
+{
+    FString m_assumedUserRoleArn;
+    FString m_assumedRoleId;
+    FString m_accessKeyId;
+    FString m_secretAccessKey;
+    FString m_sessionToken;
+    FDateTime m_expiration;
+};
+
+struct GAMELIFTSERVERSDK_API FGameLiftGetFleetRoleCredentialsRequest 
+{
+    FString m_roleArn;
+    FString m_roleSessionName;
 };
 
 struct GAMELIFTSERVERSDK_API FGameLiftError {
@@ -241,4 +264,5 @@ typedef TGameLiftOutcome<void*, FGameLiftError> FGameLiftGenericOutcome;
 typedef TGameLiftOutcome<FString, FGameLiftError> FGameLiftStringOutcome;
 typedef TGameLiftOutcome<long, FGameLiftError> FGameLiftLongOutcome;
 typedef TGameLiftOutcome<FGameLiftDescribePlayerSessionsResult, FGameLiftError> FGameLiftDescribePlayerSessionsOutcome;
-typedef TGameLiftOutcome< FGameLiftGetInstanceCertificateResult, FGameLiftError> FGameLiftGetInstanceCertificateOutcome;
+typedef TGameLiftOutcome<FGameLiftGetComputeCertificateResult, FGameLiftError> FGameLiftGetComputeCertificateOutcome;
+typedef TGameLiftOutcome<FGameLiftGetFleetRoleCredentialsResult, FGameLiftError> FGameLiftGetFleetRoleCredentialsOutcome;

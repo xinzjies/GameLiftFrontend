@@ -1,25 +1,31 @@
 /*
-* All or portions of this file Copyright (c) Amazon.com, Inc. or its affiliates or
-* its licensors.
-*
-* For complete copyright and license terms please see the LICENSE at the root of this
-* distribution (the "License"). All use of this software is governed by the License,
-* or, if provided, by the license below or the license accompanying this file. Do not
-* remove or modify any license notices. This file is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*
-*/
+ * All or portions of this file Copyright (c) Amazon.com, Inc. or its affiliates or
+ * its licensors.
+ *
+ * For complete copyright and license terms please see the LICENSE at the root of this
+ * distribution (the "License"). All use of this software is governed by the License,
+ * or, if provided, by the license below or the license accompanying this file. Do not
+ * remove or modify any license notices. This file is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *
+ */
 #pragma once
+
+#if defined(_MSC_VER) && !defined(GAMELIFT_USE_STD)
+#pragma warning(push)           // Save warning settings.
+#pragma warning(disable : 4996) // Disable deprecated warning for strncpy
+#endif
+
 #include <aws/gamelift/common/GameLift_EXPORTS.h>
 
 #ifndef MAX_STRING_LIST_LENGTH
-    #define MAX_STRING_LIST_LENGTH 10
+#define MAX_STRING_LIST_LENGTH 10
 #endif
-#ifndef MAX_STRING_MAP_SIZE 
-    #define MAX_STRING_MAP_SIZE 10
+#ifndef MAX_STRING_MAP_SIZE
+#define MAX_STRING_MAP_SIZE 10
 #endif
 #ifndef MAX_STRING_LENGTH
-    #define MAX_STRING_LENGTH 101
+#define MAX_STRING_LENGTH 101
 #endif
 
 #ifdef GAMELIFT_USE_STD
@@ -27,103 +33,66 @@
 #include <vector>
 #endif
 
-namespace Aws
-{
-namespace GameLift
-{
-namespace Server
-{
-namespace Model
-{
+namespace Aws {
+namespace GameLift {
+namespace Server {
+namespace Model {
 
 /**
-    * <p>A single player attribute value to be used when making a StartMatchBackfill
-    * request.  This could be a string, number, string list, or string/number map.
-    * For more information, see the <a
-    * href="http://docs.aws.amazon.com/gamelift/latest/developerguide/">Amazon
-    * GameLift Developer Guide</a>.</p>
-    */
-class AWS_GAMELIFT_API AttributeValue
-{
+ * <p>A single player attribute value to be used when making a StartMatchBackfill
+ * request.  This could be a string, number, string list, or string/number map.
+ * For more information, see the <a
+ * href="http://docs.aws.amazon.com/gamelift/latest/developerguide/">Amazon
+ * GameLift Developer Guide</a>.</p>
+ */
+class AWS_GAMELIFT_API AttributeValue {
 public:
-    enum class AttrType
-    {
-        NONE,
-        STRING,
-        DOUBLE,
-        STRING_LIST,
-        STRING_DOUBLE_MAP
-    };
+    enum class AttrType { NONE, STRING, DOUBLE, STRING_LIST, STRING_DOUBLE_MAP };
 
     /**
-    * <p>Construct an attribute value of type string list.</p>
-    */
-    static AttributeValue ConstructStringList()
-    {
-        return AttributeValue(AttrType::STRING_LIST);
-    }
-
+     * <p>Construct an attribute value of type string list.</p>
+     */
+    static AttributeValue ConstructStringList() { return AttributeValue(AttrType::STRING_LIST); }
 
     /**
-    * <p>Construct an attribute value of type string list.</p>
-    */
-    static AttributeValue ConstructStringDoubleMap()
-    {
-        return AttributeValue(AttrType::STRING_DOUBLE_MAP);
-    }
-
+     * <p>Construct an attribute value of type string list.</p>
+     */
+    static AttributeValue ConstructStringDoubleMap() { return AttributeValue(AttrType::STRING_DOUBLE_MAP); }
 
     inline AttrType GetType() const { return m_attrType; }
 
-
 #ifdef GAMELIFT_USE_STD
-    AttributeValue() : m_attrType(AttrType::NONE)
-    {
-    }
+    AttributeValue() : m_N(0), m_S(""), m_attrType(AttrType::NONE) {}
 
     /**
-    * <p>Construct an attribute value of type double.</p>
-    */
-    explicit AttributeValue(double n) : m_N(n), m_attrType(AttrType::DOUBLE)
-    {
-    }
+     * <p>Construct an attribute value of type double.</p>
+     */
+    explicit AttributeValue(double n) : m_N(n), m_S(""), m_attrType(AttrType::DOUBLE) {}
 
     /**
-    * <p>Construct an attribute value of type string.</p>
-    */
-    AttributeValue(std::string s) : m_S(s), m_attrType(AttrType::STRING)
-    {
-    }
+     * <p>Construct an attribute value of type string.</p>
+     */
+    AttributeValue(std::string s) : m_N(0), m_S(s), m_attrType(AttrType::STRING) {}
 
     /**
-    * <p>Destructor.</p>
-    */
+     * <p>Destructor.</p>
+     */
     ~AttributeValue() {}
 
     /**
-    * <p>Copy Constructor.</p>
-    */
-    AttributeValue(const AttributeValue& other) :
-        m_S(other.m_S),
-        m_N(other.m_N),
-        m_SL(other.m_SL),
-        m_SDM(other.m_SDM),
-        m_attrType(other.m_attrType)
-    { }
+     * <p>Copy Constructor.</p>
+     */
+    AttributeValue(const AttributeValue &other) : m_S(other.m_S), m_N(other.m_N), m_SL(other.m_SL), m_SDM(other.m_SDM), m_attrType(other.m_attrType) {}
 
     /**
-    * <p>Move Constructor.</p>
-    */
-    AttributeValue(AttributeValue&& other) 
-    { 
-        *this = std::move(other);
-    }
+     * <p>Move Constructor.</p>
+     */
+    AttributeValue(AttributeValue &&other) { *this = std::move(other); }
 
     /**
-    * <p>Copy assignment Constructor.</p>
-    */
-    AttributeValue& operator= (const AttributeValue& other) 
-    {
+     * <p>Copy assignment Constructor.</p>
+     */
+    AttributeValue &operator=(const AttributeValue &other) {
         m_S = other.m_S;
         m_N = other.m_N;
         m_SL = other.m_SL;
@@ -134,10 +103,9 @@ public:
     }
 
     /**
-    * <p>Move assignment Constructor.</p>
-    */
-    AttributeValue& operator= (AttributeValue&& other) 
-    {
+     * <p>Move assignment Constructor.</p>
+     */
+    AttributeValue &operator=(AttributeValue &&other) {
         m_S = std::move(other.m_S);
         m_N = std::move(other.m_N);
         m_SL = std::move(other.m_SL);
@@ -147,17 +115,13 @@ public:
         return *this;
     }
 
-    inline const std::string& GetS() const { return m_S; }
-
+    inline const std::string &GetS() const { return m_S; }
 
     inline double GetN() const { return m_N; }
 
+    inline const std::vector<std::string> &GetSL() const { return m_SL; }
 
-    inline const std::vector<std::string>& GetSL() const { return m_SL; }
-
-
-    inline const std::map<std::string, double>& GetSDM() const { return m_SDM; }
-
+    inline const std::map<std::string, double> &GetSDM() const { return m_SDM; }
 
     inline void AddString(std::string value) {
         if (m_attrType == AttrType::STRING_LIST && m_SL.size() < MAX_STRING_LIST_LENGTH) {
@@ -165,9 +129,10 @@ public:
         }
     }
 
-
-    inline AttributeValue& WithString(std::string value) { AddString(value); return *this; }
-
+    inline AttributeValue &WithString(std::string value) {
+        AddString(value);
+        return *this;
+    }
 
     inline void AddStringAndDouble(std::string key, double value) {
         if (m_attrType == AttrType::STRING_DOUBLE_MAP && m_SDM.size() < MAX_STRING_MAP_SIZE) {
@@ -175,35 +140,28 @@ public:
         }
     }
 
-
-    inline AttributeValue& WithStringAndDouble(std::string key, double value) { AddStringAndDouble(key, value); return *this; }
+    inline AttributeValue &WithStringAndDouble(std::string key, double value) {
+        AddStringAndDouble(key, value);
+        return *this;
+    }
 
 private:
-    explicit AttributeValue(AttrType attrType) : m_attrType(attrType)
-    {
-    }
+    explicit AttributeValue(AttrType attrType) : m_N(0), m_S(""), m_attrType(attrType) {}
 #else
 public:
-    explicit AttributeValue(AttrType attrType) : m_SLCount(0), m_SDMCount(0), m_attrType(attrType)
-    {
-    }
+    explicit AttributeValue(AttrType attrType) : m_N(0), m_SLCount(0), m_SDMCount(0), m_attrType(attrType) { m_S[0] = '\0'; }
 
-    AttributeValue() : m_SLCount(0), m_SDMCount(0), m_attrType(AttrType::NONE)
-    {
-    }
+    AttributeValue() : m_N(0), m_SLCount(0), m_SDMCount(0), m_attrType(AttrType::NONE) { m_S[0] = '\0'; }
 
     /**
-    * <p>Construct an attribute value of type double.</p>
-    */
-    explicit AttributeValue(double n) : m_N(n), m_SLCount(0), m_SDMCount(0), m_attrType(AttrType::DOUBLE)
-    {
-    }
+     * <p>Construct an attribute value of type double.</p>
+     */
+    explicit AttributeValue(double n) : m_N(n), m_SLCount(0), m_SDMCount(0), m_attrType(AttrType::DOUBLE) { m_S[0] = '\0'; }
 
     struct KeyAndValue;
     typedef char AttributeStringType[MAX_STRING_LENGTH];
 
-    explicit AttributeValue(const char* s)
-    {
+    explicit AttributeValue(const char *s) {
         initValues();
 
         m_attrType = AttrType::STRING;
@@ -212,42 +170,33 @@ public:
     }
 
     /**
-    * <p>Destructor.</p>
-    */
+     * <p>Destructor.</p>
+     */
     ~AttributeValue() {}
 
     /**
-    * <p>Copy Constructor.</p>
-    */
-    AttributeValue(const AttributeValue& other)
-    {
-        *this = other;
-    }
+     * <p>Copy Constructor.</p>
+     */
+    AttributeValue(const AttributeValue &other) { *this = other; }
 
     /**
-    * <p>Move Constructor.</p>
-    */
-    AttributeValue(AttributeValue&& other) 
-    {
-        *this = std::move(other);
-    }
+     * <p>Move Constructor.</p>
+     */
+    AttributeValue(AttributeValue &&other) { *this = std::move(other); }
 
     /**
-    * <p>Copy assignment Constructor.</p>
-    */
-    AttributeValue& operator= (const AttributeValue& other) 
-    {
+     * <p>Copy assignment Constructor.</p>
+     */
+    AttributeValue &operator=(const AttributeValue &other) {
         m_attrType = other.m_attrType;
         strncpy(m_S, other.m_S, MAX_STRING_LENGTH);
         m_N = other.m_N;
         m_SLCount = other.m_SLCount;
         m_SDMCount = other.m_SDMCount;
-        for (int index = 0; index < m_SLCount; ++index)
-        {
+        for (int index = 0; index < m_SLCount; ++index) {
             strncpy(m_SL[index], other.m_SL[index], MAX_STRING_LENGTH);
         }
-        for (int index = 0; index < m_SDMCount; ++index)
-        {
+        for (int index = 0; index < m_SDMCount; ++index) {
             m_SDM[index] = other.m_SDM[index];
         }
 
@@ -255,67 +204,62 @@ public:
     }
 
     /**
-    * <p>Move assignment Constructor.</p>
-    */
-    AttributeValue& operator= (AttributeValue&& other) 
-    {
+     * <p>Move assignment Constructor.</p>
+     */
+    AttributeValue &operator=(AttributeValue &&other) {
         *this = other;
 
         return *this;
     }
 
-    inline const char* GetS() const{ return m_S; }
-
+    inline const char *GetS() const { return m_S; }
 
     inline double GetN() const { return m_N; }
 
+    inline const AttributeStringType *const GetSL(int &count) const {
+        count = m_SLCount;
+        return m_SL;
+    }
 
-    inline const AttributeStringType* const GetSL(int& count) const { count = m_SLCount; return m_SL; }
+    inline const KeyAndValue *GetSDM(int &count) const {
+        count = m_SDMCount;
+        return m_SDM;
+    }
 
-
-    inline const KeyAndValue* GetSDM(int& count) const { count = m_SDMCount; return m_SDM; }
-
-
-    inline void AddString(const char* value) {
+    inline void AddString(const char *value) {
         if (m_attrType == AttrType::STRING_LIST && m_SLCount < MAX_STRING_LIST_LENGTH) {
             strncpy(m_SL[m_SLCount], value, MAX_STRING_LENGTH);
             m_SL[m_SLCount++][MAX_STRING_LENGTH - 1] = '\0';
         }
     };
 
+    inline AttributeValue &WithString(const char *value) {
+        AddString(value);
+        return *this;
+    }
 
-    inline AttributeValue& WithString(const char* value) { AddString(value); return *this; }
-
-
-    inline void AddStringAndDouble(const char* key, double value) {
+    inline void AddStringAndDouble(const char *key, double value) {
         if (m_attrType == AttrType::STRING_DOUBLE_MAP && m_SDMCount < MAX_STRING_MAP_SIZE) {
             m_SDM[m_SDMCount++] = KeyAndValue(key, value);
         }
     };
 
+    inline AttributeValue &WithStringAndDouble(const char *key, double value) {
+        AddStringAndDouble(key, value);
+        return *this;
+    }
 
-    inline AttributeValue& WithStringAndDouble(const char* key, double value) { AddStringAndDouble(key, value); return *this; }
+    struct KeyAndValue {
+        KeyAndValue() : m_key(), m_value(0) {}
 
-
-    struct KeyAndValue
-    {
-        KeyAndValue() : m_key(), m_value(0)
-        {
-        }
-
-        KeyAndValue(const char* key, double value) : m_value(value)
-        {
+        KeyAndValue(const char *key, double value) : m_value(value) {
             strncpy(m_key, key, MAX_STRING_LENGTH);
             m_key[MAX_STRING_LENGTH - 1] = '\0';
         }
 
-        KeyAndValue(const KeyAndValue& other)
-        {
-            *this = other;
-        }
+        KeyAndValue(const KeyAndValue &other) { *this = other; }
 
-        KeyAndValue& operator=(const KeyAndValue& other)
-        {
+        KeyAndValue &operator=(const KeyAndValue &other) {
             strncpy(m_key, other.m_key, MAX_STRING_LENGTH);
             m_key[MAX_STRING_LENGTH - 1] = '\0';
             m_value = other.m_value;
@@ -323,19 +267,15 @@ public:
             return *this;
         }
 
-        KeyAndValue(const KeyAndValue&& other)
-        {
-            *this = std::move(other);
-        }
+        KeyAndValue(const KeyAndValue &&other) { *this = std::move(other); }
 
-        KeyAndValue& operator=(const KeyAndValue&& other)
-        {
+        KeyAndValue &operator=(const KeyAndValue &&other) {
             *this = other;
 
             return *this;
         }
 
-        inline const char* GetKey() const { return m_key; }
+        inline const char *GetKey() const { return m_key; }
 
         inline double GetValue() const { return m_value; }
 
@@ -345,8 +285,7 @@ public:
     };
 
 private:
-    void initValues()
-    {
+    void initValues() {
         m_S[0] = '\0';
         m_N = 0;
         memset(m_SL, 0, sizeof(AttributeStringType) * MAX_STRING_LIST_LENGTH);
@@ -378,3 +317,7 @@ private:
 } // namespace Server
 } // namespace GameLift
 } // namespace Aws
+
+#if defined(_MSC_VER) && !defined(GAMELIFT_USE_STD)
+#pragma warning(pop) // Restore warnings to previous state.
+#endif

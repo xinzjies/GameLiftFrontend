@@ -84,9 +84,16 @@ FGameLiftStringOutcome FGameLiftServerSDKModule::GetSdkVersion() {
 #endif
 }
 
-FGameLiftGenericOutcome FGameLiftServerSDKModule::InitSDK() {
+FGameLiftGenericOutcome FGameLiftServerSDKModule::InitSDK(const FServerParameters &serverParameters) {
 #if WITH_GAMELIFT
-    auto initSDKOutcome = Aws::GameLift::Server::InitSDK();
+    Aws::GameLift::Server::Model::ServerParameters sdkServerParameters;
+    sdkServerParameters.SetWebSocketUrl(TCHAR_TO_UTF8(*serverParameters.m_webSocketUrl));
+    sdkServerParameters.SetFleetId(TCHAR_TO_UTF8(*serverParameters.m_fleetId));
+    sdkServerParameters.SetProcessId(TCHAR_TO_UTF8(*serverParameters.m_processId));
+    sdkServerParameters.SetHostId(TCHAR_TO_UTF8(*serverParameters.m_hostId));
+    sdkServerParameters.SetAuthToken(TCHAR_TO_UTF8(*serverParameters.m_authToken));
+
+    auto initSDKOutcome = Aws::GameLift::Server::InitSDK(sdkServerParameters);
     if (initSDKOutcome.IsSuccess()) {
         return FGameLiftGenericOutcome(nullptr);
     }
@@ -125,23 +132,6 @@ FGameLiftGenericOutcome FGameLiftServerSDKModule::ActivateGameSession() {
     return FGameLiftGenericOutcome(nullptr);
 #endif
 }
-
-#pragma warning(push)
-#pragma warning(disable: 4996) // Disabling deprecation warning (just for building plugin itself)
-FGameLiftGenericOutcome FGameLiftServerSDKModule::TerminateGameSession() {
-#if WITH_GAMELIFT
-    auto outcome = Aws::GameLift::Server::TerminateGameSession();
-    if (outcome.IsSuccess()){
-        return FGameLiftGenericOutcome(nullptr);
-    }
-    else {
-        return FGameLiftGenericOutcome(FGameLiftError(outcome.GetError()));
-    }
-#else
-    return FGameLiftGenericOutcome(nullptr);
-#endif
-}
-#pragma warning(pop)
 
 FGameLiftGenericOutcome FGameLiftServerSDKModule::AcceptPlayerSession(const FString& playerSessionId) {
 #if WITH_GAMELIFT
@@ -421,29 +411,52 @@ FGameLiftGenericOutcome FGameLiftServerSDKModule::StopMatchBackfill(const FStopM
 }
 
 
-FGameLiftGetInstanceCertificateOutcome FGameLiftServerSDKModule::GetInstanceCertificate()
+FGameLiftGetComputeCertificateOutcome FGameLiftServerSDKModule::GetComputeCertificate()
 {
 #if WITH_GAMELIFT
-    auto outcome = Aws::GameLift::Server::GetInstanceCertificate();
+    auto outcome = Aws::GameLift::Server::GetComputeCertificate();
     if (outcome.IsSuccess()) {
         auto& outres = outcome.GetResult();
-        FGameLiftGetInstanceCertificateResult result;
+        FGameLiftGetComputeCertificateResult result;
         result.m_certificate_path = UTF8_TO_TCHAR(outres.GetCertificatePath());
-        result.m_certificate_chain_path = UTF8_TO_TCHAR(outres.GetCertificateChainPath());
-        result.m_private_key_path = UTF8_TO_TCHAR(outres.GetPrivateKeyPath());
-        result.m_hostname = UTF8_TO_TCHAR(outres.GetHostName());
-        result.m_root_certificate_path = UTF8_TO_TCHAR(outres.GetRootCertificatePath());
-        return FGameLiftGetInstanceCertificateOutcome(result);
+        result.m_computeName = UTF8_TO_TCHAR(outres.GetComputeName());
+        return FGameLiftGetComputeCertificateOutcome(result);
     }
     else {
-        return FGameLiftGetInstanceCertificateOutcome(FGameLiftError(outcome.GetError()));
+        return FGameLiftGetComputeCertificateOutcome(FGameLiftError(outcome.GetError()));
     }
 #else
-    return FGameLiftGetInstanceCertificateOutcome(FGameLiftGetInstanceCertificateResult());
+    return FGameLiftGetComputeCertificateOutcome(FGameLiftGetComputeCertificateResult());
 #endif
 }
 
+FGameLiftGetFleetRoleCredentialsOutcome FGameLiftServerSDKModule::GetFleetRoleCredentials(const FGameLiftGetFleetRoleCredentialsRequest &request)
+{
+#if WITH_GAMELIFT
+    Aws::GameLift::Server::Model::GetFleetRoleCredentialsRequest sdkRequest;
+    sdkRequest.SetRoleArn(TCHAR_TO_UTF8(*request.m_roleArn));
+    sdkRequest.SetRoleSessionName(TCHAR_TO_UTF8(*request.m_roleSessionName));
 
+    auto outcome = Aws::GameLift::Server::GetFleetRoleCredentials(sdkRequest);
+
+    if (outcome.IsSuccess()) {
+        auto& outres = outcome.GetResult();
+        FGameLiftGetFleetRoleCredentialsResult result;
+        result.m_assumedUserRoleArn = UTF8_TO_TCHAR(outres.GetAssumedUserRoleArn());
+        result.m_assumedRoleId = UTF8_TO_TCHAR(outres.GetAssumedRoleId());
+        result.m_accessKeyId = UTF8_TO_TCHAR(outres.GetAccessKeyId());
+        result.m_secretAccessKey = UTF8_TO_TCHAR(outres.GetSecretAccessKey());
+        result.m_sessionToken = UTF8_TO_TCHAR(outres.GetSessionToken());
+        result.m_expiration = FDateTime::FromUnixTimestamp(outres.GetExpiration());
+        return FGameLiftGetFleetRoleCredentialsOutcome(result);
+    }
+    else {
+        return FGameLiftGetFleetRoleCredentialsOutcome(FGameLiftError(outcome.GetError()));
+    }
+#else
+    return FGameLiftGetFleetRoleCredentialsOutcome(FGameLiftGetFleetRoleCredentialsResult());
+#endif
+}
 
 #undef LOCTEXT_NAMESPACE
 
