@@ -75,7 +75,7 @@ DerivedDataCache/*
 
 # Specific to project DayOne
 # Client Build
-BuildTargets/Windows/Windows
+BuildTargets/Windows/WindowsClient
 # Dedicated Server Build
 BuildTargets/Windows/WindowsServer
 !BuildTargets/Windows/Prerequisites/*.*
