@@ -60,11 +60,19 @@ FString AGameLiftGameMode::InitNewPlayer(APlayerController* NewPlayerController,
 			{
 				DayOnePlayerState->PlayerGameId = PlayerId;
 
-				FGameLiftPlayer* GameLiftPlayer = StartGameSessionState.ReservedPlayers.Find(PlayerId);
-				if (GameLiftPlayer != nullptr)
+				UGameInstance* GameInstance = GetGameInstance();
+				if (GameInstance != nullptr)
 				{
-					GameLiftPlayer->PlayerSessionId = PlayerSessionId;
-					DayOnePlayerState->TeamName = GameLiftPlayer->TeamName;
+					UDayOneGameInstance* DayOneGameInstance = Cast<UDayOneGameInstance>(GameInstance);
+					if (DayOneGameInstance != nullptr)
+					{
+						FGameLiftPlayer* GameLiftPlayer = DayOneGameInstance->StartGameSessionState.ReservedPlayers.Find(PlayerId);
+						if (GameLiftPlayer != nullptr)
+						{
+							GameLiftPlayer->PlayerSessionId = PlayerSessionId;
+							DayOnePlayerState->TeamName = GameLiftPlayer->TeamName;
+						}
+					}
 				}
 			}
 		}
@@ -96,48 +104,51 @@ void AGameLiftGameMode::PreLogin(const FString& Options,
 			if (DescribePlayerSessionsOutcome.IsSuccess())
 			{
 				auto DescribePlayerSessionsResult = DescribePlayerSessionsOutcome.GetResult();
-				int Count = 1;
+				int Count = 0;
 				auto PlayerSessions = DescribePlayerSessionsResult.GetPlayerSessions(Count);
-				if (PlayerSessions != nullptr)
+				if (PlayerSessions != nullptr && Count != 0)
 				{
-					auto PlayerSession = PlayerSessions[0];
-					FString ExpectedPlayerId = PlayerSession.GetPlayerId();
-					auto PlayerStatus = PlayerSession.GetStatus();
-
-					UE_LOG(LogDayOne, Warning, TEXT("Expected PlayerId: %s, Actual PlayerId: %s, Player Status: %d"), *ExpectedPlayerId, *PlayerId, (int)PlayerStatus);
-
-					if (ExpectedPlayerId.Equals(PlayerId) && PlayerStatus == Aws::GameLift::Server::Model::PlayerSessionStatus::RESERVED)
+					for (int i = 0; i < Count; i++)
 					{
-						auto AcceptPlayerSessionOutcome = Aws::GameLift::Server::AcceptPlayerSession(TCHAR_TO_ANSI(*PlayerSessionId));
-						if (!AcceptPlayerSessionOutcome.IsSuccess())
+						auto PlayerSession = PlayerSessions[i];
+						FString ExpectedPlayerId = PlayerSession.GetPlayerId();
+						auto PlayerStatus = PlayerSession.GetStatus();
+						UE_LOG(LogDayOne, Warning, TEXT("Expected PlayerId: %s, Actual PlayerId: %s, Player Status: %d"), *ExpectedPlayerId, *PlayerId, (int)PlayerStatus);
+
+						if (ExpectedPlayerId.Equals(PlayerId) && PlayerStatus == Aws::GameLift::Server::Model::PlayerSessionStatus::RESERVED)
 						{
-							ErrorMessage = FString::Printf(TEXT("PlayerSessionId: %s, AcceptPlayerSession Failed: %s"), *PlayerSessionId, ANSI_TO_TCHAR(AcceptPlayerSessionOutcome.GetError().GetErrorMessage()));
-						}
-					}
-					else
-					{
-						if (!ExpectedPlayerId.Equals(PlayerId))
-						{
-							ErrorMessage = FString::Printf(TEXT("Expected Player ID: %s and Player ID: %s doesn't match"), *ExpectedPlayerId, *PlayerId);
-						}
-						else if (PlayerStatus != Aws::GameLift::Server::Model::PlayerSessionStatus::RESERVED)
-						{
-							ErrorMessage = FString::Printf(TEXT("PlayerStatus isn't RESERVED"));
+							auto AcceptPlayerSessionOutcome = Aws::GameLift::Server::AcceptPlayerSession(TCHAR_TO_ANSI(*PlayerSessionId));
+							if (!AcceptPlayerSessionOutcome.IsSuccess())
+							{
+								ErrorMessage = FString::Printf(TEXT("PlayerSessionId: %s, AcceptPlayerSession Failed: %s"), *PlayerSessionId, *FString(AcceptPlayerSessionOutcome.GetError().GetErrorMessage()));
+							}
+							break;
 						}
 						else
 						{
-							ErrorMessage = "Unknown Unauthorized error";
+							if (ExpectedPlayerId.Equals(PlayerId) && PlayerStatus != Aws::GameLift::Server::Model::PlayerSessionStatus::RESERVED)
+							{
+								ErrorMessage = FString::Printf(TEXT("PlayerStatus isn't RESERVED"));
+							}
+							else if (i == Count - 1)
+							{
+								ErrorMessage = "Failed to find expected PlayerId";
+							}
+							else
+							{
+								ErrorMessage = "Unknown Unauthorized error";
+							}
 						}
 					}
 				}
 				else
 				{
-					ErrorMessage = "Failed to get PlayerSession";
+					ErrorMessage = "Failed to get PlayerSessions";
 				}
 			}
 			else
 			{
-				ErrorMessage = "Failed to Describe PlayerSession";
+				ErrorMessage = "Failed to Describe PlayerSessions";
 			}
 		}
 		else
@@ -147,7 +158,7 @@ void AGameLiftGameMode::PreLogin(const FString& Options,
 	}
 	else
 	{
-		ErrorMessage = "Invalid Options";
+		ErrorMessage = "No Options in request";
 	}
 #endif
 }
@@ -163,10 +174,18 @@ void AGameLiftGameMode::Logout(AController* Exiting)
 			ADayOnePlayerState* DayOnePlayerState = Cast<ADayOnePlayerState>(PlayerState);
 			if (DayOnePlayerState != nullptr)
 			{
-				const FGameLiftPlayer* GameLiftPlayer = StartGameSessionState.ReservedPlayers.Find(DayOnePlayerState->PlayerGameId);
-				if (GameLiftPlayer != nullptr)
+				UGameInstance* GameInstance = GetGameInstance();
+				if (GameInstance != nullptr)
 				{
-					Aws::GameLift::Server::RemovePlayerSession(TCHAR_TO_ANSI(*GameLiftPlayer->PlayerSessionId));
+					UDayOneGameInstance* DayOneGameInstance = Cast<UDayOneGameInstance>(GameInstance);
+					if (DayOneGameInstance != nullptr)
+					{
+						const FGameLiftPlayer* GameLiftPlayer = DayOneGameInstance->StartGameSessionState.ReservedPlayers.Find(DayOnePlayerState->PlayerGameId);
+						if (GameLiftPlayer != nullptr)
+						{
+							Aws::GameLift::Server::RemovePlayerSession(TCHAR_TO_ANSI(*GameLiftPlayer->PlayerSessionId));
+						}
+					}
 				}
 			}
 		}

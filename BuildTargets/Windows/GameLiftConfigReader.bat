@@ -50,3 +50,10 @@ if not "%FLEET_ID%"=="None" (
         SET WEBSOCKET_URL=%%F
     )
 )
+
+SET AUTH_TOKEN=
+if not "%FLEET_ID%"=="None" (
+    FOR /F "tokens=* USEBACKQ" %%F IN (`call aws gamelift get-compute-auth-token --fleet-id %FLEET_ID% --compute-name %COMPUTE_NAME% --region %AWS_REGION% --query "AuthToken" --output text`) DO (
+        SET AUTH_TOKEN=%%F
+    )
+)

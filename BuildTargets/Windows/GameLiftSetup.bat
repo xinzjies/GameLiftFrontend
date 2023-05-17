@@ -15,6 +15,7 @@ echo - Compute Name: %COMPUTE_NAME%
 echo - Public IP: %PUBLIC_IP%
 echo - Service SDK Endpoint: %WEBSOCKET_URL%
 echo - GameServer Port: %GAMESERVER_PORT%
+echo - Auth Token: %AUTH_TOKEN%
 
 :: Create custom location
 echo.
