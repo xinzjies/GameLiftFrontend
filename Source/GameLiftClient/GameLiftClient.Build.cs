@@ -16,7 +16,8 @@ public class GameLiftClient : ModuleRules
 			"JsonUtilities",
 			"WebBrowserWidget",
 			"UMG",
-			"SlateCore"
+			"SlateCore",
+			"DeveloperSettings"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

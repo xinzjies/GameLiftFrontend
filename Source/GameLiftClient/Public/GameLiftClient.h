@@ -21,23 +21,12 @@ DECLARE_DELEGATE(FOnStopMatchmakingResponse);
 DECLARE_DELEGATE_FiveParams(FOnPollMatchmakingResponse, FString /*TicketType*/, FString /*PlayerId*/, FString /*PlayerSessionId*/, FString /*IpAddress*/, FString /*Port*/);
 DECLARE_DELEGATE_OneParam(FOnTestLatencyResponse, LatencyMap /*AverageLatencyMap*/);
 
-UCLASS(Config="GameLiftClient")
+UCLASS()
 class GAMELIFTCLIENT_API UGameLiftClient : public UObject
 {
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(Config)
-	FString LoginUrl;
-	UPROPERTY(Config)
-	FString LoginCallbackUrl;
-	UPROPERTY(Config)
-	FString ApiKey;
-	UPROPERTY(Config)
-	FString InvokeUrl;
-	UPROPERTY(Config)
-	TArray<FString> RegionCodes;
-	
 	UGameLiftClient();
 
 	virtual void PostInitProperties() override;

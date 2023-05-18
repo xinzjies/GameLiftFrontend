@@ -1,5 +1,7 @@
 ﻿#include "GameLiftClient.h"
 
+#include "GameLiftClientSettings.h"
+
 DEFINE_LOG_CATEGORY(LogGameLiftClient);
 
 UGameLiftClient::UGameLiftClient()
@@ -19,12 +21,14 @@ UGameLiftClient::UGameLiftClient()
 void UGameLiftClient::PostInitProperties()
 {
 	UObject::PostInitProperties();
+
+	const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
 	
-	UE_LOG(LogGameLiftClient, Warning, TEXT("LoginUrl: %s"), *LoginUrl);
-	UE_LOG(LogGameLiftClient, Warning, TEXT("LoginCallbackUrl: %s"), *LoginCallbackUrl);
-	UE_LOG(LogGameLiftClient, Warning, TEXT("ApiKey: %s"), *ApiKey);
-	UE_LOG(LogGameLiftClient, Warning, TEXT("InvokeUrl: %s"), *InvokeUrl);
-	for (FString Region : RegionCodes)
+	UE_LOG(LogGameLiftClient, Warning, TEXT("LoginUrl: %s"), *Settings->LoginUrl);
+	UE_LOG(LogGameLiftClient, Warning, TEXT("LoginCallbackUrl: %s"), *Settings->LoginCallbackUrl);
+	UE_LOG(LogGameLiftClient, Warning, TEXT("ApiKey: %s"), *Settings->ApiKey);
+	UE_LOG(LogGameLiftClient, Warning, TEXT("InvokeUrl: %s"), *Settings->InvokeUrl);
+	for (FString Region : Settings->RegionCodes)
 	{
 		UE_LOG(LogGameLiftClient, Warning, TEXT("Region: %s"), *Region);
 
@@ -44,12 +48,14 @@ bool UGameLiftClient::IsTokenValid() const
 
 FOnLoginResponse& UGameLiftClient::ShowLoginUI(UWebBrowser& WebBrowser)
 {
+	const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
+	
 	// Load Cognito Hosted UI.
 	if (!WebBrowser.IsVisible())
 	{
 		WebBrowser.SetVisibility(ESlateVisibility::Visible);
 	}
-	WebBrowser.LoadURL(LoginUrl);
+	WebBrowser.LoadURL(Settings->LoginUrl);
 	WebBrowser.OnUrlChanged.AddUniqueDynamic(this, &ThisClass::OnLoginUrlChanged);
 
 	return OnLoginResponse;
@@ -61,10 +67,12 @@ void UGameLiftClient::OnLoginUrlChanged(const FText& BrowserUrl)
 	FString QueryParameters;
 
 	UE_LOG(LogGameLiftClient, Warning, TEXT("BrowserUrl: %s"), *BrowserUrl.ToString())
-
+	
 	// Only process Cognito Hosted UI login callback URL.
 	if (BrowserUrl.ToString().Split("?", &Url, &QueryParameters)) {
-		if (Url.Equals(LoginCallbackUrl)) {
+		const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
+		
+		if (Url.Equals(Settings->LoginCallbackUrl)) {
 			FString ParameterName;
 			FString ParameterValue;
 
@@ -98,10 +106,12 @@ FOnExchangeCodeToTokensResponse& UGameLiftClient::ExchangeCodeToTokens(const FSt
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&InvokeBody);
 	if (FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter))
 	{
+		const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
+		
 		TSharedRef<IHttpRequest> ExchangeCodeToTokensRequest = HttpModule->CreateRequest();
-		ExchangeCodeToTokensRequest->SetURL(InvokeUrl + InvokeResource);
+		ExchangeCodeToTokensRequest->SetURL(Settings->InvokeUrl + InvokeResource);
 		ExchangeCodeToTokensRequest->SetVerb(InvokeMethod);
-		ExchangeCodeToTokensRequest->SetHeader("x-api-key", ApiKey);
+		ExchangeCodeToTokensRequest->SetHeader("x-api-key", Settings->ApiKey);
 		ExchangeCodeToTokensRequest->SetHeader("Content-Type", "application/json");
 		ExchangeCodeToTokensRequest->SetContentAsString(InvokeBody);
 		ExchangeCodeToTokensRequest->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnExchangeCodeToTokensResponseReceived);
@@ -161,10 +171,12 @@ FOnRefreshTokensResponse& UGameLiftClient::RefreshTokens()
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&InvokeBody);
 	if (FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter))
 	{
+		const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
+		
 		TSharedRef<IHttpRequest> RefreshTokensRequest = HttpModule->CreateRequest();
-		RefreshTokensRequest->SetURL(InvokeUrl + InvokeResource);
+		RefreshTokensRequest->SetURL(Settings->InvokeUrl + InvokeResource);
 		RefreshTokensRequest->SetVerb(InvokeMethod);
-		RefreshTokensRequest->SetHeader("x-api-key", ApiKey);
+		RefreshTokensRequest->SetHeader("x-api-key", Settings->ApiKey);
 		RefreshTokensRequest->SetHeader("Content-Type", "application/json");
 		RefreshTokensRequest->SetHeader("Authorization", AccessToken);
 		RefreshTokensRequest->SetContentAsString(InvokeBody);
@@ -224,11 +236,13 @@ FOnRevokeTokensResponse& UGameLiftClient::RevokeTokens()
 {
 	const FString InvokeResource("/tokens/revoke");
 	const FString InvokeMethod("POST");
+
+	const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
 	
 	TSharedRef<IHttpRequest> RevokeTokensRequest = HttpModule->CreateRequest();
-	RevokeTokensRequest->SetURL(InvokeUrl + InvokeResource);
+	RevokeTokensRequest->SetURL(Settings->InvokeUrl + InvokeResource);
 	RevokeTokensRequest->SetVerb(InvokeMethod);
-	RevokeTokensRequest->SetHeader("x-api-key", ApiKey);
+	RevokeTokensRequest->SetHeader("x-api-key", Settings->ApiKey);
 	RevokeTokensRequest->SetHeader("Authorization", AccessToken);
 	RevokeTokensRequest->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnRevokeTokensResponseReceived);
 	RevokeTokensRequest->ProcessRequest();
@@ -254,11 +268,13 @@ FOnGetPlayerDataResponse& UGameLiftClient::GetPlayerData()
 {
 	const FString InvokeResource("/players/self");
 	const FString InvokeMethod("GET");
+
+	const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
 	
 	TSharedRef<IHttpRequest> GetPlayerDataRequest = HttpModule->CreateRequest();
-	GetPlayerDataRequest->SetURL(InvokeUrl + InvokeResource);
+	GetPlayerDataRequest->SetURL(Settings->InvokeUrl + InvokeResource);
 	GetPlayerDataRequest->SetVerb(InvokeMethod);
-	GetPlayerDataRequest->SetHeader("x-api-key", ApiKey);
+	GetPlayerDataRequest->SetHeader("x-api-key", Settings->ApiKey);
 	GetPlayerDataRequest->SetHeader("Authorization", AccessToken);
 	GetPlayerDataRequest->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnGetPlayerDataResponseReceived);
 	GetPlayerDataRequest->ProcessRequest();
@@ -301,10 +317,12 @@ FOnStartMatchmakingResponse& UGameLiftClient::StartMatchmaking()
 	TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&InvokeBody);
 	if (FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter))
 	{
+		const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
+		
 		TSharedRef<IHttpRequest> StartMatchmakingRequest = HttpModule->CreateRequest();
-		StartMatchmakingRequest->SetURL(InvokeUrl + InvokeResource);
+		StartMatchmakingRequest->SetURL(Settings->InvokeUrl + InvokeResource);
 		StartMatchmakingRequest->SetVerb(InvokeMethod);
-		StartMatchmakingRequest->SetHeader("x-api-key", ApiKey);
+		StartMatchmakingRequest->SetHeader("x-api-key", Settings->ApiKey);
 		StartMatchmakingRequest->SetHeader("Content-Type", "application/json");
 		StartMatchmakingRequest->SetHeader("Authorization", AccessToken);
 		StartMatchmakingRequest->SetContentAsString(InvokeBody);
@@ -337,10 +355,12 @@ FOnStopMatchmakingResponse& UGameLiftClient::StopMatchmaking()
 	const FString InvokeResource("/matchmaking/" + TicketId);
 	const FString InvokeMethod("DELETE");
 
+	const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
+
 	TSharedRef<IHttpRequest> StopMatchmakingRequest = HttpModule->CreateRequest();
-	StopMatchmakingRequest->SetURL(InvokeUrl + InvokeResource);
+	StopMatchmakingRequest->SetURL(Settings->InvokeUrl + InvokeResource);
 	StopMatchmakingRequest->SetVerb(InvokeMethod);
-	StopMatchmakingRequest->SetHeader("x-api-key", ApiKey);
+	StopMatchmakingRequest->SetHeader("x-api-key", Settings->ApiKey);
 	StopMatchmakingRequest->SetHeader("Authorization", AccessToken);
 	StopMatchmakingRequest->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnStopMatchmakingResponseReceived);
 	StopMatchmakingRequest->ProcessRequest();
@@ -364,10 +384,12 @@ FOnPollMatchmakingResponse& UGameLiftClient::PollMatchmaking()
 	const FString InvokeResource("/matchmaking/" + TicketId);
 	const FString InvokeMethod("GET");
 
+	const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
+
 	TSharedRef<IHttpRequest> PollMatchmakingRequest = HttpModule->CreateRequest();
-	PollMatchmakingRequest->SetURL(InvokeUrl + InvokeResource);
+	PollMatchmakingRequest->SetURL(Settings->InvokeUrl + InvokeResource);
 	PollMatchmakingRequest->SetVerb(InvokeMethod);
-	PollMatchmakingRequest->SetHeader("x-api-key", ApiKey);
+	PollMatchmakingRequest->SetHeader("x-api-key", Settings->ApiKey);
 	PollMatchmakingRequest->SetHeader("Authorization", AccessToken);
 	PollMatchmakingRequest->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnPollMatchmakingResponseReceived);
 	PollMatchmakingRequest->ProcessRequest();
@@ -426,8 +448,10 @@ void UGameLiftClient::OnPollMatchmakingResponseReceived(FHttpRequestPtr Request,
 FOnTestLatencyResponse& UGameLiftClient::TestLatency()
 {
 	LatencyMapCache.Empty();
+
+	const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
 	
-	for (FString RegionCode : RegionCodes)
+	for (FString RegionCode : Settings->RegionCodes)
 	{
 		TSharedRef<IHttpRequest> TestLatencyRequest = HttpModule->CreateRequest();
 		TestLatencyRequest->SetURL("https://gamelift." + RegionCode + ".amazonaws.com");
@@ -443,14 +467,16 @@ void UGameLiftClient::OnTestLatencyResponseReceived(FHttpRequestPtr Request, FHt
 {
 	if (bConnectedSuccessfully)
 	{
+		const UGameLiftClientSettings* Settings = GetDefault<UGameLiftClientSettings>();
+		
 		// Latency in milliseconds
 		float ResponseTime = Request->GetElapsedTime() * 1000;
-		for (FString RegionCode : RegionCodes)
+		for (FString RegionCode : Settings->RegionCodes)
 		{
 			if (Request->GetURL().Contains(RegionCode))
 			{
 				LatencyMapCache.Add(RegionCode, ResponseTime);
-				if (LatencyMapCache.Num() == RegionCodes.Num())
+				if (LatencyMapCache.Num() == Settings->RegionCodes.Num())
 				{
 					// begin
 					for (const TPair<FString, float>& Pair : LatencyMapCache)
