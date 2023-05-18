@@ -40,4 +40,5 @@ if "%FLEET_ID%"=="None" (
 :: Register your compute
 echo.
 echo Register your compute
+aws gamelift deregister-compute --compute-name %COMPUTE_NAME% --fleet-id %FLEET_ID% --region %AWS_REGION%
 aws gamelift register-compute --compute-name %COMPUTE_NAME% --fleet-id %FLEET_ID% --ip-address %PUBLIC_IP% --location %LOCATION_NAME% --region %AWS_REGION%
